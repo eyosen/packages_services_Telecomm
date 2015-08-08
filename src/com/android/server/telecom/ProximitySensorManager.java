@@ -27,6 +27,8 @@ public class ProximitySensorManager extends CallsManagerListenerBase {
     private static final String TAG = ProximitySensorManager.class.getSimpleName();
 
     private final PowerManager.WakeLock mProximityWakeLock;
+    private boolean mWasSweepToSleepEnabled = false;
+    private boolean mWasSweepToWakeEnabled = false;
     private boolean mWasTapToWakeEnabled = false;
     private final CmHardwareManager mCmHardwareManager;
 
@@ -66,6 +68,16 @@ public class ProximitySensorManager extends CallsManagerListenerBase {
         if (!mProximityWakeLock.isHeld()) {
             Log.i(this, "Acquiring proximity wake lock");
             mProximityWakeLock.acquire();
+            if (mCmHardwareManager.isSupported(CmHardwareManager.FEATURE_SWEEP_TO_SLEEP)) {
+                mWasSweepToSleepEnabled =
+                        mCmHardwareManager.get(CmHardwareManager.FEATURE_SWEEP_TO_SLEEP);
+                mCmHardwareManager.set(CmHardwareManager.FEATURE_SWEEP_TO_SLEEP, false);
+            }
+            if (mCmHardwareManager.isSupported(CmHardwareManager.FEATURE_SWEEP_TO_WAKE)) {
+                mWasSweepToWakeEnabled =
+                        mCmHardwareManager.get(CmHardwareManager.FEATURE_SWEEP_TO_WAKE);
+                mCmHardwareManager.set(CmHardwareManager.FEATURE_SWEEP_TO_WAKE, false);
+            }
             if (mCmHardwareManager.isSupported(CmHardwareManager.FEATURE_TAP_TO_WAKE)) {
                 mWasTapToWakeEnabled =
                         mCmHardwareManager.get(CmHardwareManager.FEATURE_TAP_TO_WAKE);
@@ -85,6 +97,14 @@ public class ProximitySensorManager extends CallsManagerListenerBase {
             return;
         }
         if (mProximityWakeLock.isHeld()) {
+            if (mCmHardwareManager.isSupported(CmHardwareManager.FEATURE_SWEEP_TO_SLEEP)
+                    && mWasSweepToSleepEnabled) {
+                mCmHardwareManager.set(CmHardwareManager.FEATURE_SWEEP_TO_SLEEP, true);
+            }
+            if (mCmHardwareManager.isSupported(CmHardwareManager.FEATURE_SWEEP_TO_WAKE)
+                    && mWasSweepToWakeEnabled) {
+                mCmHardwareManager.set(CmHardwareManager.FEATURE_SWEEP_TO_WAKE, true);
+            }
             if (mCmHardwareManager.isSupported(CmHardwareManager.FEATURE_TAP_TO_WAKE)
                     && mWasTapToWakeEnabled) {
                 mCmHardwareManager.set(CmHardwareManager.FEATURE_TAP_TO_WAKE, true);
